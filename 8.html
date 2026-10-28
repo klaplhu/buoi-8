@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dự Án Giữa Kỳ - Smart Dynamic Greeting</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            --transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* 🌅 THEME BUỔI SÁNG (Morning: 05:00 - 11:59) */
+        body.theme-morning {
+            --bg-gradient: linear-gradient(135deg, #fef3c7 0%, #e0f2fe 50%, #bae6fd 100%);
+            --hero-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.85), rgba(254, 243, 199, 0.8));
+            --primary: #d97706;
+            --text-title: #78350f;
+            --text-body: #92400e;
+            --badge-bg: rgba(251, 191, 36, 0.2);
+            --badge-border: rgba(245, 158, 11, 0.4);
+            --toast-border: #f59e0b;
+            --glow: rgba(245, 158, 11, 0.35);
+        }
+
+        /* 🌤️ THEME BUỔI CHIỀU (Afternoon: 12:00 - 17:59) */
+        body.theme-afternoon {
+            --bg-gradient: linear-gradient(135deg, #e0f2fe 0%, #ede9fe 50%, #fed7aa 100%);
+            --hero-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.85), rgba(224, 242, 254, 0.8));
+            --primary: #0284c7;
+            --text-title: #0c4a6e;
+            --text-body: #0369a1;
+            --badge-bg: rgba(2, 132, 199, 0.15);
+            --badge-border: rgba(2, 132, 199, 0.35);
+            --toast-border: #0284c7;
+            --glow: rgba(2, 132, 199, 0.35);
+        }
+
+        /* 🌙 THEME BUỔI TỐI / ĐÊM (Night: 18:00 - 04:59) */
+        body.theme-night {
+            --bg-gradient: linear-gradient(135deg, #090d16 0%, #0f172a 50%, #1e1b4b 100%);
+            --hero-bg: linear-gradient(135deg, rgba(30, 41, 59, 0.75), rgba(15, 23, 42, 0.85));
+            --primary: #818cf8;
+            --text-title: #f8fafc;
+            --text-body: #cbd5e1;
+            --badge-bg: rgba(99, 102, 241, 0.2);
+            --badge-border: rgba(129, 140, 248, 0.4);
+            --toast-border: #818cf8;
+            --glow: rgba(129, 140, 248, 0.35);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: var(--font-family);
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-body);
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 60px auto 40px auto;
+            padding: 0 24px;
+            flex: 1;
+        }
+
+        .hero-card {
+            background: var(--hero-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 28px;
+            padding: 48px 40px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1), 0 0 40px var(--glow);
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            gap: 36px;
+            transition: var(--transition);
+        }
+
+        .time-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            border-radius: 50px;
+            background: var(--badge-bg);
+            border: 1px solid var(--badge-border);
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+
+        .time-badge::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary);
+            box-shadow: 0 0 10px var(--primary);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(0.95); opacity: 0.7; }
+            50% { transform: scale(1.3); opacity: 1; }
+        }
+
+        .greeting-title {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: var(--text-title);
+            line-height: 1.2;
+            margin-bottom: 14px;
+            letter-spacing: -1px;
+        }
+
+        .greeting-desc {
+            font-size: 1.15rem;
+            line-height: 1.6;
+            margin-bottom: 24px;
+            max-width: 540px;
+        }
+
+        .live-clock-wrapper {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 10px 20px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .live-clock {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .live-date {
+            font-size: 0.9rem;
+            font-weight: 600;
+            opacity: 0.8;
+        }
+
+        .icon-showcase {
+            width: 170px;
+            height: 170px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5.5rem;
+            filter: drop-shadow(0 15px 25px var(--glow));
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(4deg); }
+        }
+
+        /* Bộ nút test khung giờ phục vụ thuyết trình */
+        .simulator-panel {
+            margin-top: 32px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            border-radius: 18px;
+            padding: 20px 28px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .sim-btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .sim-btn {
+            background: rgba(255, 255, 255, 0.8);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sim-btn:hover { transform: translateY(-2px); background: #ffffff; }
+        .sim-btn.active { background: var(--primary); color: #fff; }
+
+        /* Toast thông báo */
+        .toast-notification {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(16px);
+            padding: 16px 20px;
+            border-radius: 16px;
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
+            border-left: 5px solid var(--toast-border);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transform: translateX(120%);
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            max-width: 380px;
+            z-index: 9999;
+        }
+
+        .toast-notification.show { transform: translateX(0); }
+        .toast-icon { font-size: 1.8rem; }
+        .toast-content h4 { font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-bottom: 2px; }
+        .toast-content p { font-size: 0.85rem; color: #64748b; }
+        .toast-close { background: none; border: none; font-size: 1.2rem; cursor: pointer; margin-left: auto; color: #94a3b8; }
+
+        @media (max-width: 768px) {
+            .hero-card {
+                grid-template-columns: 1fr;
+                text-align: center;
+                padding: 32px 24px;
+            }
+            .greeting-desc { margin: 0 auto 20px auto; }
+            .icon-showcase { margin: 0 auto; width: 130px; height: 130px; font-size: 4.5rem; }
+            .simulator-panel { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body class="theme-morning">
+
+    <div class="container">
+        <!-- BANNER CHÀO MỪNG ĐỘNG -->
+        <div class="hero-card">
+            <div>
+                <div class="time-badge" id="time-badge">Buổi Sáng</div>
+                <h1 class="greeting-title" id="greeting-title">Chào buổi sáng!</h1>
+                <p class="greeting-desc" id="greeting-desc">Đang cập nhật lời chúc...</p>
+                <div class="live-clock-wrapper">
+                    <span class="live-clock" id="live-clock">00:00:00</span>
+                    <span class="live-date" id="live-date">Thứ 4, 28/10/2026</span>
+                </div>
+            </div>
+            <div class="icon-showcase" id="icon-showcase">☀️</div>
+        </div>
+
+        <!-- BỘ TEST KHUNG GIỜ THUYẾT TRÌNH -->
+        <div class="simulator-panel">
+            <span style="font-weight: 700;">khung giờ:</span>
+            <div class="sim-btn-group">
+                <button class="sim-btn active" onclick="setManualTime('auto')">⚡ Giờ thực tế</button>
+                <button class="sim-btn" onclick="setManualTime(8)">🌅 Sáng (8h)</button>
+                <button class="sim-btn" onclick="setManualTime(14)">☀️ Chiều (14h)</button>
+                <button class="sim-btn" onclick="setManualTime(21)">🌙 Tối (21h)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST THÔNG BÁO -->
+    <div class="toast-notification" id="toast">
+        <div class="toast-icon" id="toast-icon">✨</div>
+        <div class="toast-content">
+            <h4 id="toast-title">Thông báo</h4>
+            <p id="toast-desc">Chào mừng bạn ghé thăm!</p>
+        </div>
+        <button class="toast-close" onclick="closeToast()">&times;</button>
+    </div>
+
+    <script>
+        let simulatedHour = null;
+
+        const GREETING_DATA = {
+            morning: {
+                theme: "theme-morning",
+                badge: "Buổi Sáng Năng Động",
+                title: "Chào buổi sáng! ☀️",
+                desc: "Chào mừng bạn đến với website của nhóm. Chúc bạn có một ngày mới tràn đầy nhiệt huyết và học tập hiệu quả!",
+                icon: "☀️",
+                toast: "Chào buổi sáng tốt lành! Hãy bắt đầu ngày mới thật tuyệt vời."
+            },
+            afternoon: {
+                theme: "theme-afternoon",
+                badge: "Buổi Chiều Năng Suất",
+                title: "Chào buổi chiều! 🌤️",
+                desc: "Hy vọng bạn đang có một ngày làm việc tuyệt vời. Khám phá các tính năng mới nhất trên trang web của chúng mình nhé!",
+                icon: "🌤️",
+                toast: "Chào buổi chiều! Đừng quên uống đủ nước và giữ năng lượng nhé."
+            },
+            night: {
+                theme: "theme-night",
+                badge: "Buổi Tối Thư Giãn",
+                title: "Chào buổi tối! 🌙",
+                desc: "Ngày dài đã khép lại. Chúc bạn có những phút giây thư giãn bình yên và chuẩn bị sẵn sàng cho ngày mai!",
+                icon: "✨",
+                toast: "Chào buổi tối! Chúc bạn có khoảng thời gian nghỉ ngơi ấm áp."
+            }
+        };
+
+        function updateGreeting() {
+            const now = new Date();
+            const currentHour = (simulatedHour !== null) ? simulatedHour : now.getHours();
+            let period = "morning";
+
+            // LOGIC KIỂM TRA ĐIỀU KIỆN THEO ĐỀ BÀI TUẦN 8:
+            if (currentHour >= 5 && currentHour < 12) {
+                period = "morning";
+            } else if (currentHour >= 12 && currentHour < 18) {
+                period = "afternoon";
+            } else {
+                period = "night";
+            }
+
+            const data = GREETING_DATA[period];
+            document.body.className = data.theme;
+            document.getElementById("time-badge").innerText = data.badge;
+            document.getElementById("greeting-title").innerText = data.title;
+            document.getElementById("greeting-desc").innerText = data.desc;
+            document.getElementById("icon-showcase").innerText = data.icon;
+
+            document.getElementById("toast-icon").innerText = data.icon;
+            document.getElementById("toast-title").innerText = data.title;
+            document.getElementById("toast-desc").innerText = data.toast;
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById("live-clock").innerText = `${h}:${m}:${s}`;
+
+            const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+            document.getElementById("live-date").innerText = `${days[now.getDay()]}, ${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
+        }
+
+        function triggerNotification() {
+            const toast = document.getElementById("toast");
+            setTimeout(() => toast.classList.add("show"), 600);
+            setTimeout(() => closeToast(), 5600);
+        }
+
+        function closeToast() {
+            document.getElementById("toast").classList.remove("show");
+        }
+
+        function setManualTime(hourVal) {
+            const buttons = document.querySelectorAll(".sim-btn");
+            buttons.forEach(btn => btn.classList.remove("active"));
+            event.target.classList.add("active");
+
+            simulatedHour = (hourVal === 'auto') ? null : hourVal;
+            updateGreeting();
+            triggerNotification();
+        }
+
+        window.addEventListener("DOMContentLoaded", () => {
+            updateGreeting();
+            updateClock();
+            setInterval(updateClock, 1000);
+            triggerNotification();
+        });
+    </script>
+</body>
+</html>
